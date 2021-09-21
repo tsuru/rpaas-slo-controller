@@ -1,2 +1,3 @@
 # rpaas-slo-controller
-Integrate slo-generator with rpaasinstances
+
+Integrate [slo-generator](https://github.com/globocom/slo-generator) with rpaas-instances
