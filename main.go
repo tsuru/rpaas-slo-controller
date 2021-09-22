@@ -20,13 +20,11 @@ import (
 var (
 	scheme   = runtime.NewScheme()
 	setupLog = ctrl.Log.WithName("setup")
-)
 
-func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = v1alpha1.AddToScheme(scheme)
 	_ = monitoringv1.AddToScheme(scheme)
-}
+)
 
 var (
 	enableLeaderElection = kingpin.Flag(

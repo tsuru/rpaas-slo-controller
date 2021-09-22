@@ -124,6 +124,8 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	if err != nil {
 		return ctrl.Result{}, err
 	}
+
+	// TODO: handle not found
 	tagsRaw := rpaasInstance.ObjectMeta.Annotations[rpaasTagsAnnotation]
 	var tags []string
 	if tagsRaw != "" {
@@ -185,6 +187,9 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 
 		if prometheusRule.Labels == nil {
 			prometheusRule.Labels = map[string]string{}
+		}
+		if prometheusRule.Annotations == nil {
+			prometheusRule.Annotations = map[string]string{}
 		}
 		if instancePool != "" {
 			prometheusRule.Labels[tsuruPoolLabel] = instancePool
