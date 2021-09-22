@@ -5,6 +5,7 @@ import (
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 
+	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/tsuru/rpaas-operator/api/v1alpha1"
 	"github.com/tsuru/rpaas-slo-controller/controllers"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,7 +25,7 @@ var (
 func init() {
 	_ = clientgoscheme.AddToScheme(scheme)
 	_ = v1alpha1.AddToScheme(scheme)
-	// +kubebuilder:scaffold:scheme
+	_ = monitoringv1.AddToScheme(scheme)
 }
 
 var (
