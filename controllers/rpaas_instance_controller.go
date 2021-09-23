@@ -10,6 +10,7 @@ import (
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/tsuru/rpaas-operator/api/v1alpha1"
+	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -122,10 +123,13 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		Name:      req.Name,
 	}, rpaasInstance)
 	if err != nil {
+		if k8sErrors.IsNotFound(err) {
+			err = r.reconcileRemovePrometheusRules(ctx, rpaasInstance)
+			return ctrl.Result{}, err
+		}
 		return ctrl.Result{}, err
 	}
 
-	// TODO: handle not found
 	tagsRaw := rpaasInstance.ObjectMeta.Annotations[rpaasTagsAnnotation]
 	var tags []string
 	if tagsRaw != "" {
