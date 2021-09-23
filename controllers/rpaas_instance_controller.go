@@ -5,11 +5,11 @@ import (
 	"strings"
 
 	sloKubernetes "github.com/globocom/slo-generator/kubernetes"
-	"github.com/globocom/slo-generator/methods"
 	"github.com/globocom/slo-generator/slo"
 	"github.com/go-logr/logr"
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/tsuru/rpaas-operator/api/v1alpha1"
+	"github.com/tsuru/rpaas-slo-controller/definition"
 	k8sErrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -35,87 +35,6 @@ type RpaasInstanceReconciler struct {
 	Log logr.Logger
 }
 
-var classesDefinition = slo.ClassesDefinition{
-	Classes: []slo.Class{
-		{
-			Name: "critical",
-			Objectives: slo.Objectives{
-				Availability: 99.99,
-				Latency: []methods.LatencyTarget{
-					{
-						LE:     "0.200",
-						Target: 99,
-					},
-					{
-						LE:     "0.100",
-						Target: 95,
-					},
-				},
-			},
-		},
-		{
-			Name: "high_fast",
-			Objectives: slo.Objectives{
-				Availability: 99.9,
-				Latency: []methods.LatencyTarget{
-					{
-						LE:     "0.200",
-						Target: 99,
-					},
-					{
-						LE:     "0.100",
-						Target: 95,
-					},
-				},
-			},
-		},
-		{
-			Name: "high",
-			Objectives: slo.Objectives{
-				Availability: 99.9,
-				Latency: []methods.LatencyTarget{
-					{
-						LE:     "1.000",
-						Target: 99,
-					},
-					{
-						LE:     "0.500",
-						Target: 95,
-					},
-				},
-			},
-		},
-		{
-			Name: "high_slow",
-			Objectives: slo.Objectives{
-				Availability: 99.9,
-				Latency: []methods.LatencyTarget{
-					{
-						LE:     "5.000",
-						Target: 99,
-					},
-					{
-						LE:     "1.000",
-						Target: 95,
-					},
-				},
-			},
-		},
-		{
-			Name: "medium",
-			Objectives: slo.Objectives{
-				Availability: 99,
-			},
-		},
-		{
-			Name: "low",
-			Objectives: slo.Objectives{
-				Availability: 98,
-			},
-		},
-	},
-}
-
 func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	rpaasInstance := &v1alpha1.RpaasInstance{}
 	err := r.Client.Get(ctx, client.ObjectKey{
@@ -130,21 +49,9 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	tagsRaw := rpaasInstance.ObjectMeta.Annotations[rpaasTagsAnnotation]
-	var tags []string
-	if tagsRaw != "" {
-		tags = strings.Split(tagsRaw, ",")
-	}
-	sloTags := extractTagValues([]string{"slo:", "SLO:", "slo=", "SLO:"}, tags)
-	if len(sloTags) == 0 {
-		err = r.reconcileRemovePrometheusRules(ctx, rpaasInstance)
-		return ctrl.Result{}, err
-	}
-
-	class := strings.ToLower(sloTags[0])
-	sloClass, err := classesDefinition.FindClass(class)
-	if err != nil {
-		r.Log.Error(err, "could not find a SLO classs",
+	sloClass, _ := definition.SLOClass(rpaasInstance)
+	if sloClass == nil {
+		r.Log.Info("could not find a SLO classs",
 			"name", req.Name,
 			"namespace", req.Namespace,
 		)
@@ -154,7 +61,7 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	prometheusRules := sloKubernetes.GenerateManifests(sloKubernetes.Opts{
 		SLO: slo.SLO{
 			Name:  "tsuru." + req.Namespace + "." + req.Name,
-			Class: class,
+			Class: sloClass.Name,
 			Labels: map[string]string{
 				"tsuru_team_owner": rpaasInstance.ObjectMeta.Annotations[rpaasTeamOwnerAnnotation],
 			},
@@ -320,24 +227,4 @@ func (r *RpaasInstanceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&v1alpha1.RpaasInstance{}).
 		Complete(r)
-}
-
-func extractTagValues(prefixes, tags []string) []string {
-	for _, t := range tags {
-		for _, p := range prefixes {
-			if !strings.HasPrefix(t, p) {
-				continue
-			}
-
-			separator := string(p[len(p)-1])
-			parts := strings.SplitN(t, separator, 2)
-			if len(parts) == 1 {
-				return nil
-			}
-
-			return parts[1:]
-		}
-	}
-
-	return nil
 }

@@ -8,6 +8,7 @@ import (
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/tsuru/rpaas-operator/api/v1alpha1"
 	"github.com/tsuru/rpaas-slo-controller/controllers"
+	"github.com/tsuru/rpaas-slo-controller/webhook"
 	"k8s.io/apimachinery/pkg/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
@@ -66,6 +67,8 @@ func main() {
 	}
 
 	// +kubebuilder:scaffold:builder
+	setupLog.Info("starting mutation webhook")
+	go webhook.Run()
 
 	setupLog.Info("starting manager")
 	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {

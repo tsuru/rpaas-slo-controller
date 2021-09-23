@@ -7,9 +7,11 @@ require (
 	github.com/globocom/slo-generator v0.2.2-0.20210922120954-fe6dee4f2f6e
 	github.com/go-logr/logr v0.4.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.50.0 // indirect
+	github.com/slok/kubewebhook/v2 v2.1.0 // indirect
 	github.com/stretchr/testify v1.7.0 // indirect
 	github.com/tsuru/rpaas-operator v0.19.0
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
+	k8s.io/api v0.22.2 // indirect
 	k8s.io/apimachinery v0.22.2
 	k8s.io/client-go v0.22.2
 	sigs.k8s.io/controller-runtime v0.10.1
