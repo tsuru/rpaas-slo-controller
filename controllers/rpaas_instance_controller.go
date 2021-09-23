@@ -133,7 +133,8 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 	sloTags := extractTagValues([]string{"slo:", "SLO:", "slo=", "SLO:"}, tags)
 	if len(sloTags) == 0 {
-		return ctrl.Result{}, nil
+		err = r.reconcileRemovePrometheusRules(ctx, rpaasInstance)
+		return ctrl.Result{}, err
 	}
 
 	class := strings.ToLower(sloTags[0])
@@ -143,7 +144,8 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			"name", req.Name,
 			"namespace", req.Namespace,
 		)
-		return ctrl.Result{}, nil
+		err = r.reconcileRemovePrometheusRules(ctx, rpaasInstance)
+		return ctrl.Result{}, err
 	}
 	prometheusRules := sloKubernetes.GenerateManifests(sloKubernetes.Opts{
 		SLO: slo.SLO{
@@ -249,6 +251,30 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *RpaasInstanceReconciler) reconcileRemovePrometheusRules(ctx context.Context, rpaasInstance *v1alpha1.RpaasInstance) error {
+	existingPrometheusRules, err := r.existingPrometheusRules(ctx, rpaasInstance)
+	if err != nil {
+		r.Log.Error(err, "could not get PrometheusRules",
+			"name", rpaasInstance.Name,
+			"namespace", rpaasInstance.Namespace,
+		)
+		return err
+	}
+
+	for _, rule := range existingPrometheusRules {
+		err = r.Client.Delete(ctx, rule)
+
+		r.Log.Error(err, "could not remove unused PrometheusRule",
+			"name", rule.Name,
+			"namespace", rule.Namespace,
+		)
+
+		return err
+	}
+
+	return nil
 }
 
 func (r *RpaasInstanceReconciler) existingPrometheusRules(ctx context.Context, rpaasInstance *v1alpha1.RpaasInstance) ([]*monitoringv1.PrometheusRule, error) {
