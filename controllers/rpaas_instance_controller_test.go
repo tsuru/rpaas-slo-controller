@@ -3,6 +3,7 @@ package controllers
 import (
 	"context"
 	"testing"
+	"text/template"
 
 	monitoringv1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1"
 	"github.com/stretchr/testify/assert"
@@ -52,8 +53,9 @@ func TestReconcileRpaasInstanceSLOCritical(t *testing.T) {
 		WithScheme(scheme).
 		WithRuntimeObjects(rpaasInstance1).Build()
 	reconciler := &RpaasInstanceReconciler{
-		Client: k8sClient,
-		Log:    ctrl.Log,
+		Client:            k8sClient,
+		Log:               ctrl.Log,
+		AlertLinkTemplate: template.Must(template.New("link").Parse("http://grafana.com/blah?var-instance={{ .Name }}")),
 	}
 
 	_, err := reconciler.Reconcile(ctx, ctrl.Request{
@@ -89,6 +91,8 @@ func TestReconcileRpaasInstanceSLOCritical(t *testing.T) {
 
 	require.Len(t, prometheusRule.Spec.Groups, 1)
 	assert.Len(t, prometheusRule.Spec.Groups[0].Rules, 4)
+	assert.Equal(t, "http://grafana.com/blah?var-instance=instance1", prometheusRule.Spec.Groups[0].Rules[0].Annotations["link"])
+
 }
 
 func TestReconcileRpaasInstancePoolNamespaced(t *testing.T) {

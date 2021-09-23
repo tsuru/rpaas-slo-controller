@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"bytes"
 	"context"
 	"strings"
+	"text/template"
 
 	sloKubernetes "github.com/globocom/slo-generator/kubernetes"
 	"github.com/globocom/slo-generator/slo"
@@ -31,6 +33,7 @@ var _ reconcile.Reconciler = &RpaasInstanceReconciler{}
 
 // RpaasInstanceReconciler reconciles a RpaasInstance object
 type RpaasInstanceReconciler struct {
+	AlertLinkTemplate *template.Template
 	client.Client
 	Log logr.Logger
 }
@@ -58,6 +61,20 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		err = r.reconcileRemovePrometheusRules(ctx, rpaasInstance)
 		return ctrl.Result{}, err
 	}
+
+	sloAnnotations := map[string]string{}
+	if r.AlertLinkTemplate != nil {
+		var buf bytes.Buffer
+		err = r.AlertLinkTemplate.Execute(&buf, rpaasInstance)
+		if err != nil {
+			r.Log.Error(err, "could not generate alert link",
+				"name", req.Name,
+				"namespace", req.Namespace,
+			)
+		}
+		sloAnnotations["link"] = buf.String()
+	}
+
 	prometheusRules := sloKubernetes.GenerateManifests(sloKubernetes.Opts{
 		SLO: slo.SLO{
 			Name:  "tsuru." + req.Namespace + "." + req.Name,
@@ -65,9 +82,7 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			Labels: map[string]string{
 				"tsuru_team_owner": rpaasInstance.ObjectMeta.Annotations[rpaasTeamOwnerAnnotation],
 			},
-			Annotations: map[string]string{
-				"link": "https://mygrafana", // TODO: configure the default link
-			},
+			Annotations: sloAnnotations,
 			LatencyRecord: slo.ExprBlock{
 				AlertMethod: "multi-window",
 			},
