@@ -48,7 +48,9 @@ func TestReconcileRpaasInstanceSLOCritical(t *testing.T) {
 		},
 	}
 
-	k8sClient := fake.NewFakeClientWithScheme(scheme, rpaasInstance1)
+	k8sClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(rpaasInstance1).Build()
 	reconciler := &RpaasInstanceReconciler{
 		Client: k8sClient,
 		Log:    ctrl.Log,
@@ -106,7 +108,9 @@ func TestReconcileRpaasInstancePoolNamespaced(t *testing.T) {
 		},
 	}
 
-	k8sClient := fake.NewFakeClientWithScheme(scheme, rpaasInstance1)
+	k8sClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(rpaasInstance1).Build()
 	reconciler := &RpaasInstanceReconciler{
 		Client: k8sClient,
 		Log:    ctrl.Log,
@@ -179,7 +183,9 @@ func TestReconcileRpaasInstanceUpdate(t *testing.T) {
 		},
 	}
 
-	k8sClient := fake.NewFakeClientWithScheme(scheme, rpaasInstance1, prometheusRule, prometheusRuleStale)
+	k8sClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(rpaasInstance1, prometheusRule, prometheusRuleStale).Build()
 	reconciler := &RpaasInstanceReconciler{
 		Client: k8sClient,
 		Log:    ctrl.Log,
@@ -255,7 +261,9 @@ func TestReconcileRpaasInstanceRemoveSLO(t *testing.T) {
 		},
 	}
 
-	k8sClient := fake.NewFakeClientWithScheme(scheme, rpaasInstance1, prometheusRule)
+	k8sClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(rpaasInstance1, prometheusRule).Build()
 	reconciler := &RpaasInstanceReconciler{
 		Client: k8sClient,
 		Log:    ctrl.Log,
@@ -307,7 +315,9 @@ func TestReconcileRpaasInstanceInvalidSLO(t *testing.T) {
 		},
 	}
 
-	k8sClient := fake.NewFakeClientWithScheme(scheme, rpaasInstance1, prometheusRule)
+	k8sClient := fake.NewClientBuilder().
+		WithScheme(scheme).
+		WithRuntimeObjects(rpaasInstance1, prometheusRule).Build()
 	reconciler := &RpaasInstanceReconciler{
 		Client: k8sClient,
 		Log:    ctrl.Log,
