@@ -75,13 +75,24 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		sloAnnotations["link"] = buf.String()
 	}
 
+	rulesNamespace := implicitNamespace(rpaasInstance.Namespace)
+	instancePool := implicitPool(rpaasInstance.Namespace)
+
+	prometheusRulesLabels := map[string]string{
+		"tsuru_team_owner": rpaasInstance.ObjectMeta.Annotations[rpaasTeamOwnerAnnotation],
+		"rpaas_instance":   rpaasInstance.Labels[rpaasInstanceNameAnnotation],
+		"rpaas_service":    rpaasInstance.Labels[rpaasServiceNameAnnotation],
+	}
+
+	if instancePool != "" {
+		prometheusRulesLabels["tsuru_pool"] = instancePool
+	}
+
 	prometheusRules := sloKubernetes.GenerateManifests(sloKubernetes.Opts{
 		SLO: slo.SLO{
-			Name:  "tsuru." + req.Namespace + "." + req.Name,
-			Class: sloClass.Name,
-			Labels: map[string]string{
-				"tsuru_team_owner": rpaasInstance.ObjectMeta.Annotations[rpaasTeamOwnerAnnotation],
-			},
+			Name:        "tsuru." + req.Namespace + "." + req.Name,
+			Class:       sloClass.Name,
+			Labels:      prometheusRulesLabels,
 			Annotations: sloAnnotations,
 			LatencyRecord: slo.ExprBlock{
 				AlertMethod: "multi-window",
@@ -92,9 +103,6 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		},
 		Class: sloClass,
 	})
-
-	rulesNamespace := implicitNamespace(rpaasInstance.Namespace)
-	instancePool := implicitPool(rpaasInstance.Namespace)
 
 	existingPrometheusRules, err := r.existingPrometheusRules(ctx, rpaasInstance)
 	if err != nil {

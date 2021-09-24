@@ -92,7 +92,8 @@ func TestReconcileRpaasInstanceSLOCritical(t *testing.T) {
 	require.Len(t, prometheusRule.Spec.Groups, 1)
 	assert.Len(t, prometheusRule.Spec.Groups[0].Rules, 4)
 	assert.Equal(t, "http://grafana.com/blah?var-instance=instance1", prometheusRule.Spec.Groups[0].Rules[0].Annotations["link"])
-
+	assert.Equal(t, "instance1", prometheusRule.Spec.Groups[0].Rules[0].Labels["rpaas_instance"])
+	assert.Equal(t, "rpaasv2", prometheusRule.Spec.Groups[0].Rules[0].Labels["rpaas_service"])
 }
 
 func TestReconcileRpaasInstancePoolNamespaced(t *testing.T) {
