@@ -82,6 +82,7 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		"tsuru_team_owner": rpaasInstance.ObjectMeta.Annotations[rpaasTeamOwnerAnnotation],
 		"rpaas_instance":   rpaasInstance.Labels[rpaasInstanceNameAnnotation],
 		"rpaas_service":    rpaasInstance.Labels[rpaasServiceNameAnnotation],
+		"slo_class":        sloClass.Name,
 	}
 
 	if instancePool != "" {

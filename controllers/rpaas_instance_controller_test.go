@@ -94,6 +94,7 @@ func TestReconcileRpaasInstanceSLOCritical(t *testing.T) {
 	assert.Equal(t, "http://grafana.com/blah?var-instance=instance1", prometheusRule.Spec.Groups[0].Rules[0].Annotations["link"])
 	assert.Equal(t, "instance1", prometheusRule.Spec.Groups[0].Rules[0].Labels["rpaas_instance"])
 	assert.Equal(t, "rpaasv2", prometheusRule.Spec.Groups[0].Rules[0].Labels["rpaas_service"])
+	assert.Equal(t, "critical", prometheusRule.Spec.Groups[0].Rules[0].Labels["slo_class"])
 }
 
 func TestReconcileRpaasInstancePoolNamespaced(t *testing.T) {
