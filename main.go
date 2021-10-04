@@ -38,8 +38,13 @@ var (
 		String()
 
 	alertLinkTemplate = kingpin.Flag(
-		"alert-link-template", "The template of ").
+		"alert-link-template", "The template of alert links").
 		Envar("ALERT_LINK_TEMPLATE").
+		String()
+
+	alertMessageTemplate = kingpin.Flag(
+		"alert-message-template", "The template of alert messages").
+		Envar("ALERT_MESSAGE_TEMPLATE").
 		String()
 )
 
@@ -61,15 +66,23 @@ func main() {
 		os.Exit(1)
 	}
 
-	var tpl *template.Template
+	var alertLinkTpl *template.Template
 	if alertLinkTemplate != nil {
-		tpl = template.Must(template.New("link").Parse(*alertLinkTemplate))
+		alertLinkTpl = template.Must(template.New("link").Parse(*alertLinkTemplate))
+	}
+
+	var alertMessageTpl *template.Template
+	if alertMessageTemplate != nil {
+		alertMessageTpl = template.Must(template.New("message").Parse(*alertMessageTemplate))
+
 	}
 
 	if err = (&controllers.RpaasInstanceReconciler{
-		AlertLinkTemplate: tpl,
-		Client:            mgr.GetClient(),
-		Log:               ctrl.Log.WithName("controllers").WithName("RpaasInstanceReconciler"),
+		AlertLinkTemplate:    alertLinkTpl,
+		AlertMessageTemplate: alertMessageTpl,
+
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("RpaasInstanceReconciler"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "RpaasInstance")
 		os.Exit(1)

@@ -33,7 +33,9 @@ var _ reconcile.Reconciler = &RpaasInstanceReconciler{}
 
 // RpaasInstanceReconciler reconciles a RpaasInstance object
 type RpaasInstanceReconciler struct {
-	AlertLinkTemplate *template.Template
+	AlertLinkTemplate    *template.Template
+	AlertMessageTemplate *template.Template
+
 	client.Client
 	Log logr.Logger
 }
@@ -73,6 +75,18 @@ func (r *RpaasInstanceReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 			)
 		}
 		sloAnnotations["link"] = buf.String()
+	}
+
+	if r.AlertMessageTemplate != nil {
+		var buf bytes.Buffer
+		err = r.AlertMessageTemplate.Execute(&buf, rpaasInstance)
+		if err != nil {
+			r.Log.Error(err, "could not generate alert message",
+				"name", req.Name,
+				"namespace", req.Namespace,
+			)
+		}
+		sloAnnotations["message"] = buf.String()
 	}
 
 	rulesNamespace := implicitNamespace(rpaasInstance.Namespace)
