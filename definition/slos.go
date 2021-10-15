@@ -15,6 +15,22 @@ const (
 var classesDefinition = slo.ClassesDefinition{
 	Classes: []slo.Class{
 		{
+			Name: "critical_fast",
+			Objectives: slo.Objectives{
+				Availability: 99.99,
+				Latency: []methods.LatencyTarget{
+					{
+						LE:     "0.100",
+						Target: 99,
+					},
+					{
+						LE:     "0.050",
+						Target: 95,
+					},
+				},
+			},
+		},
+		{
 			Name: "critical",
 			Objectives: slo.Objectives{
 				Availability: 99.99,
@@ -99,7 +115,7 @@ func SLOClass(instance *v1alpha1.RpaasInstance) (*slo.Class, error) {
 	if tagsRaw != "" {
 		tags = strings.Split(tagsRaw, ",")
 	}
-	sloTags := extractTagValues([]string{"slo:", "SLO:", "slo=", "SLO:"}, tags)
+	sloTags := extractTagValues([]string{"slo:", "SLO:", "slo=", "SLO="}, tags)
 	if len(sloTags) == 0 {
 		return nil, nil
 	}
